@@ -1,0 +1,46 @@
+#!/usr/bin/env python
+
+VERSION = '1.0'
+
+import sys
+import argparse
+import urllib.request
+import json
+
+
+class Status:
+    OK = 0
+    WARNING=1
+    CRITICAL=2
+    UNKNOWN=3
+
+nagios_codes = [ 'OK', 'WARNING', 'CRITICAL', 'UNKNOWN' ]
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Nagios plugin for checking MyLife apps on their monitoring endpoint.')
+    parser.add_argument('-u', '--url', metavar="<url>", help="monitoring endpoint URL to connect to", dest='url', type=str, required=True)
+    parser.add_argument('-v', '--version',  action='version', version="check_mylife_app v{}".format(VERSION))
+
+    args = parser.parse_args()
+
+    data = json.load(urllib.request.urlopen(args.url))
+
+    print(data["output"])
+    sys.exit(data["code"])
+
+def exit(status=Status.OK, message=""):
+    """
+    Produce a Nagios-compatible single-line message and exit according
+    to status
+    """
+
+    print("%s - %s" % (nagios_codes[status], message))
+    sys.exit(status)
+
+if __name__ == "__main__":
+    try:
+      main()
+      exit(Status.UNKNOWN, "Main returned")
+    except Exception as e:
+      exit(Status.UNKNOWN, "Exception: {}".format(e))
